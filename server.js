@@ -1,4 +1,6 @@
-const express = require("express");
+import express from "express";
+// Highlight: Changed require to import
+import { MongoClient, ObjectId } from "mongodb";
 
 const app = express();
 
@@ -15,8 +17,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
-const { MongoClient, ObjectId } = require("mongodb");
 
 let db;
 
@@ -35,19 +35,19 @@ MongoClient.connect(
     process.exit(1);
   });
 
-  app.use((req, res, next) => {
-    console.log(`Method: ${req.method}`);
-    console.log(`URL: ${req.url}`);
-    console.log(`Status: ${res.statusCode}`);
-    if (req.method === "POST" || req.method === "PUT") {
-      console.log(`Body: ${JSON.stringify(req.body, null, 2)}`);
-    }
-   
-    console.log("-------------------------");
-    next();
-  });
-   
-   
+app.use((req, res, next) => {
+  console.log(`Method: ${req.method}`);
+  console.log(`URL: ${req.url}`);
+  console.log(`Status: ${res.statusCode}`);
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log(`Body: ${JSON.stringify(req.body, null, 2)}`);
+  }
+ 
+  console.log("-------------------------");
+  next();
+});
+ 
+ 
 app.get("/", (req, res, next) => {
   res.send("Select a collection, e.g., /collection/messages");
 });
@@ -68,12 +68,15 @@ app.get("/collection/:collectionName", async (req, res, next) => {
   }
 });
 
-const ObjectID = require("mongodb").ObjectID;
-app.get("/collection/:collectionName/:id", (req, res, next) => {
-  req.collection.findOne({ _id: new ObjectID(req.params.id) }, (e, result) => {
-    if (e) return next(e);
+// Highlight: Removed require and using the already imported ObjectId
+app.get("/collection/:collectionName/:id", async (req, res, next) => {
+  // Highlight: Changed callback to async/await
+  try {
+    const result = await req.collection.findOne({ _id: new ObjectId(req.params.id) });
     res.send(result);
-  });
+  } catch (e) {
+    return next(e);
+  }
 });
 
 app.post("/collection/:collectionName", async (req, res, next) => {
@@ -102,11 +105,12 @@ app.put("/collection/:collectionName/:id", async (req, res, next) => {
   }
 });
 
-app.delete("/collection/:collectionName/:id", (req, res, next) => {
-  req.collection.deleteOne({ _id: ObjectID(req.params.id) }, (e, result) => {
-    if (e) return next(e);
-    res.send(result.result.n === 1 ? { msg: "success" } : { msg: "error" });
-  });
+app.delete("/collection/:collectionName/:id", async (req, res, next) => {
+  // Highlight: Changed callback to async/await
+  try {
+    const result = await req.collection.deleteOne({ _id: new ObjectId(req.params.id) });
+    res.send(result.deletedCount === 1 ? { msg: "success" } : { msg: "error" });
+  } catch (e) {
+    return next(e);
+  }
 });
-
-
