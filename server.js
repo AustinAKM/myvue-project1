@@ -24,7 +24,7 @@ MongoClient.connect(
   "mongodb+srv://austin_db:austindb123@cluster0.auvne.mongodb.net/"
 )
   .then((client) => {
-    db = client.db("aca");
+    db = client.db("myvue-project1");
     console.log("Connected to MongoDB successfully!");
     app.listen(app.get("port"), () => {
       console.log("⁠Express.js server running at localhost:3000");
