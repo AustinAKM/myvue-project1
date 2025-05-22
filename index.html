@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>After Class Activities</title>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+
+    <div id="app">
+      <header>
+        <h1>{{sitename}}</h1>
+        <button v-on:click="showCheckout" :disabled="cart.length === 0">
+          {{cartItemCount}}
+          <span class="fas fa-cart-plus"></span>Checkout<br />
+        </button>
+        <br />
+        <br />
+      </header>
+
+      <main>
+
+        <div v-if="showProduct">
+          <div class="sort-controls">
+            <label>Sort by: </label>
+            <select v-model="sortKey">
+              <option value="activity">Activity</option>
+              <option value="location">Location</option>
+              <option value="price">Price</option>
+              <option value="Spaces">Spaces</option>
+            </select>
+
+            <label>Order: </label>
+            <select v-model="sortOrder">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+
+          <br /><br />
+          <div class="product-grid">
+            <div
+              v-for="product in sortedProducts"
+              :key="product.id"
+              class="product-card"
+            >
+              <figure>
+                <img v-bind:src="product.image" class="img" />
+              </figure>
+              <p>Subject: {{product.activity}}</p>
+              <p>Location: {{product.location}}</p>
+              <p>Price (in Dhs): {{product.price}}</p>
+              <p>Spaces: {{product.Spaces}}</p>
+              <button v-if="product.Spaces>0" v-on:click="addToCart(product)">
+                Add To Cart
+              </button>
+              <button v-else disabled="disabled">Add To Cart</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else>
+          <h2>Your Subjects</h2>
+          <div class="product-grid">
+            <div v-for="item in cart" :key="item.id" class="product-card">
+              <figure>
+                <img v-bind:src="item.image" class="img" />
+              </figure>
+              <p>Subject: {{ item.activity }}</p>
+              <p>Location: {{ item.location }}</p>
+              <p>Price (in Dhs): {{ item.price }}</p>
+              <p>Quantity: {{ item.quantity }}</p>
+              <p>Total: {{ item.price * item.quantity }}</p>
+              <button v-on:click="removeFromCart(item)">Remove</button>
+            </div>
+          </div>
+          <h2>Checkout</h2>
+          <p>
+            <strong>Name : </strong>
+            <input
+              v-model.trim="order.name"
+              type="text"
+              pattern="[A-Za-z ]+"
+              title="Only letters and spaces are allowed"
+            />
+          </p>
+          <p>
+            <strong>City : </strong>
+            <select v-model="order.city">
+              <option disabled value=""></option>
+              <option>Abu Dhabi</option>
+              <option>Dubai</option>
+              <option>Sharjah</option>
+              <option>Ajman</option>
+              <option>Umm Al Quwain</option>
+              <option>Ras Al Khaimah</option>
+              <option>Fujairah</option>
+            </select>
+          </p>
+          <p>
+            <strong>Phone Number : </strong>
+            <input
+              v-model.number="order.phnumber"
+              type="number"
+              class="no-arrows"
+            />
+          </p>
+          <p>
+            <strong>Address : </strong>
+            <input v-model.trim="order.address" />
+          </p>
+          <p>
+            <input type="checkbox" id="transport" v-model="order.transport" />
+            <label for="transport">I need transport</label>
+          </p>
+
+          <h2>Order Information</h2>
+          <p>Name : {{order.name}}</p>
+          <p>City : {{order.city}}</p>
+          <p>Phone Number : {{order.phnumber}}</p>
+          <p>Address : {{order.address}}</p>
+          <p>Transport : {{ order.transport ? 'Yes' : 'No' }}</p>
+
+          <button v-on:click="submitForm" :disabled="!isOrderValid">
+            Checkout
+          </button>
+        </div>
+
+      </main>
+      
+    </div>
+
+    <script type="text/javascript">
+      var webstore = new Vue({
+        el: "#app",
+        data: {
+          showProduct: true,
+          sitename: "After Class Activities",
+
+          order: {
+            name: "",
+            city: "",
+            phnumber: "",
+            address: "",
+            transport: false,
+          },
+          sortKey: "price",
+          sortOrder: "asc",
+          products: [],
+          cart: [],
+        },
+        mounted() {
+          this.fetchProducts();
+        },
+        methods: {
+          addToCart(product) {
+            if (product.Spaces > 0) {
+              let cartItem = this.cart.find((item) => item.id === product.id);
+              if (cartItem) {
+                cartItem.quantity++;
+              } else {
+                this.cart.push({ ...product, quantity: 1 });
+              }
+              product.Spaces--;
+            }
+          },
+          removeFromCart(item) {
+            let index = this.cart.findIndex(
+              (cartItem) => cartItem.id === item.id
+            );
+            if (index !== -1) {
+              let product = this.products.find((p) => p.id === item.id);
+              product.Spaces += this.cart[index].quantity;
+
+              this.cart.splice(index, 1);
+            }
+          },
+          showCheckout() {
+            this.showProduct = this.showProduct ? false : true;
+          },
+          submitForm() {
+            console.log("Submit function triggered");
+            if (
+              !this.order.name ||
+              !this.order.city ||
+              !this.order.phnumber ||
+              !this.order.transport ||
+              !this.order.address
+            ) {
+              alert("Please fill out all required fields.");
+              return;
+            }
+            const cartSummary = this.cart.reduce((acc, item) => {
+              const existingProduct = acc.find((p) => p.id === item.id);
+              if (existingProduct) {
+                existingProduct.quantity += 1;
+              } else {
+                acc.push({
+                  id: item.id,
+                  activity: item.activity,
+                  price: item.price,
+                  location: item.location,
+                  quantity: 1,
+                });
+              }
+              return acc;
+            }, []);
+            fetch("https://acabackend.onrender.com/collection/orderinfo", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: this.order.name,
+                city: this.order.city,
+                phone: this.order.phnumber,
+                address: this.order.address,
+                transport: this.order.transport,
+                cart: cartSummary,
+              }),
+            }).then(async (response) => {
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                  `Server responded with error: ${response.status} - ${errorText}`
+                );
+              }
+
+              const text = await response.text();
+              let data;
+              try {
+                data = text ? JSON.parse(text) : {};
+              } catch (e) {
+                console.warn("Response is not valid JSON:", text);
+                data = {};
+              }
+
+              alert("Order Submitted Successfully!");
+              this.updateSpaces();
+              this.cart = [];
+            });
+          },
+          updateSpaces() {
+            this.cart.forEach((product) => {
+              const updatedSpaces = product.Spaces - product.quantity;
+              fetch(
+                `https://acabackend.onrender.com/collection/products/${product._id}`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ Spaces: updatedSpaces }),
+                }
+              )
+                .then((response) => response.json())
+                .then((data) => {
+                  if (data.msg === "success") {
+                    console.log(`Spaces updated for ${product.activity}`);
+                  } else {
+                    console.error(
+                      `Failed to update spaces for ${product.activity}:`,
+                      data.error
+                    );
+                  }
+                })
+                .catch((error) =>
+                  console.error("Error updating spaces:", error)
+                );
+            });
+          },
+
+          async fetchProducts() {
+            try {
+              const url = "https://acabackend.onrender.com/collection/products";
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                throw new Error("Failed to fetch products");
+              }
+
+              const data = await response.json();
+              this.products = data;
+            } catch (error) {
+              console.error("Error fetching products", error);
+            }
+          },
+        },
+        computed: {
+          sortedProducts() {
+            if (!this.sortKey) return this.products;
+
+            return this.products.slice().sort((a, b) => {
+              let valA = a[this.sortKey];
+              let valB = b[this.sortKey];
+
+              if (typeof valA === "string" && typeof valB === "string") {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+              }
+
+              let modifier = this.sortOrder === "asc" ? 1 : -1;
+              if (valA < valB) return -1 * modifier;
+              if (valA > valB) return 1 * modifier;
+              return 0;
+            });
+          },
+          cartItemCount: function () {
+            return (
+              this.cart.reduce((total, item) => total + item.quantity, 0) || ""
+            );
+          },
+          isOrderValid() {
+            const nameValid = /^[A-Za-z ]+$/.test(this.order.name);
+            return (
+              nameValid &&
+              this.order.name.trim() !== "" &&
+              this.order.city !== "" &&
+              this.order.address.trim() !== "" &&
+              this.order.phnumber !== "" &&
+              this.cart.length > 0
+            );
+          },
+        },
+      });
+    </script>
+
+  </body>
+</html>
+
